@@ -2,6 +2,8 @@
 
 基于Cucumber.js和PactumJS的BDD API自动化测试框架，用于测试保利威直播API，支持TypeScript，提供中文测试描述和步骤定义。
 
+🎥 [观看演示视频](https://www.youtube.com/watch?v=GcoMJrLWt3A)
+
 ## 特性
 
 - 🚀 基于BDD的测试框架，使用中文Gherkin语法
