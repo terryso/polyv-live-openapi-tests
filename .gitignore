@@ -1,0 +1,64 @@
+# 依赖目录
+node_modules/
+
+# 编译输出
+dist/
+build/
+
+# 环境变量
+.env
+
+# IDE 配置
+.idea/
+.vscode/
+*.sublime-*
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 测试报告
+src/reports/**/*
+!src/reports/
+!src/reports/.gitkeep
+
+# 临时文件
+*.tmp
+*.temp
+.tmp/
+.temp/
+tmp
+
+# 本地配置文件
+.env.local
+.env.*.local
+
+# 调试文件
+.debug/ 
+
+snapshots/
+.nyc_output/
+
+# 测试覆盖率
+coverage/
+
+# 测试数据
+test-data/
+
+# 测试结果
+test-results/
+
+# 快照文件
+src/snapshots/**/*.json
+!src/snapshots/**/
+!src/snapshots/**/.gitkeep
+
+# 测试快照
+test-snapshots/
+

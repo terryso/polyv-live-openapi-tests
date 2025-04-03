@@ -1,0 +1,51 @@
+{
+  "name": "live-openapi-tests",
+  "version": "1.0.0",
+  "description": "Live OpenAPI 测试",
+  "main": "index.js",
+  "scripts": {
+    "test": "cucumber-js -p default",
+    "generate": "node ./src/scripts/generate-api-features.js",
+    "test:verbose": "cucumber-js -p verbose",
+    "test:unit": "mocha -r ts-node/register \"src/__tests__/**/*.test.ts\" \"test/utils/**/*.test.ts\"",
+    "test:unit:coverage": "nyc --reporter=text --reporter=html mocha -r ts-node/register \"src/__tests__/**/*.test.ts\" \"test/utils/**/*.test.ts\"",
+    "build": "tsc",
+    "create": "node scripts/create-project.js"
+  },
+  "keywords": [
+    "api-testing",
+    "cucumber",
+    "bdd",
+    "typescript",
+    "pactum"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cucumber/cucumber": "^11.2.0",
+    "@types/chai": "^4.3.20",
+    "@types/lodash": "^4.14.194",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^18.16.0",
+    "@types/sinon": "^10.0.20",
+    "chai": "^4.3.7",
+    "cross-env": "^7.0.3",
+    "cucumber-html-reporter": "^7.1.0",
+    "lodash": "^4.17.21",
+    "mocha": "^10.2.0",
+    "moment": "^2.29.4",
+    "nyc": "^15.1.0",
+    "sinon": "^15.1.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@cucumber/pretty-formatter": "^1.0.1",
+    "axios": "^1.8.4",
+    "crypto-js": "^4.1.1",
+    "dotenv": "^16.0.3",
+    "form-data-lite": "^1.0.3",
+    "node-fetch": "^3.3.2",
+    "pactum": "^3.5.0"
+  }
+}

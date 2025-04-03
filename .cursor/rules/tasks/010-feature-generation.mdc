@@ -1,0 +1,114 @@
+---
+description: Feature 文件生成规范和指引
+globs:
+alwaysApply: false
+---
+
+# Feature 文件生成规范
+
+## 基本原则
+
+1. feature 文件使用默认语言
+2. 每个 feature 文件专注于测试一个特定的 API 功能
+3. 遵循 Gherkin 语法规范编写场景
+4. 只能使用 `src/steps/common/api.steps.ts` 中的通用步骤
+
+## API URL命名规范
+
+- 使用下划线连接多级路径：`USER.TEMPLATE_ADVERT_GET`
+- 全大写，使用下划线分隔
+- 模块名作为前缀（如：USER、CHANNEL、ACCOUNT）
+
+## 标签使用规范
+
+- Feature级标签：标识功能模块和大类（如`@account @channels`）
+- Scenario级标签：标识测试类型和特性（如`@search @pagination`）
+- **重要**：Scenario标签不得重复Feature已有的标签
+- 避免标签冗余，保持简洁明了
+
+## Feature 文件格式
+
+```gherkin
+# API文档路径: docs/account/channels.md
+@account @channels
+Feature: 查询频道列表
+  作为直播管理员
+  我希望能够查询频道列表
+  以便于管理和查看所有的直播频道
+
+  @search
+  Scenario: 成功查询频道列表
+    When 我设置查询参数表格数据
+      | 字段名     | 值      |
+      | keyword    | 测试    |
+    And 我基于键名 "ACCOUNT.CHANNELS" 发送请求
+    Then 响应状态码应为 200
+    And 响应JSON应匹配
+      """
+      {
+        "code": 200,
+        "status": "success",
+        "data": {
+          "channels": "*"
+        }
+      }
+      """
+```
+
+## 常用步骤模板
+
+### GET请求
+```gherkin
+When 我设置查询参数表格数据
+  | 字段名 | 值 |
+  | keyword  | 测试 |
+And 我基于键名 "ACCOUNT.CHANNELS" 发送请求
+```
+
+### POST请求（表格数据）
+```gherkin
+When 我设置JSON请求体为表格数据
+  | 字段名 | 值 |
+  | name  | 测试直播频道 |
+And 我基于键名 "CHANNEL.CREATE" 发送请求
+```
+
+### POST请求（JSON字符串）
+```gherkin
+When 我设置JSON请求体为
+  """
+  {
+    "name": "测试直播频道",
+    "newScene": "topclass"
+  }
+  """
+And 我基于键名 "CHANNEL.CREATE" 发送请求
+```
+
+### 通用响应验证
+```gherkin
+Then 响应状态码应为 200
+And 响应JSON应匹配
+  """
+  {
+    "code": 200,
+    "status": "success",
+    "data": {
+      "channelId": "*",  # 通配符匹配任意值
+      "userId": "*"
+    }
+  }
+  """
+```
+
+## 初始场景生成指南
+
+- 一个新Feature文件只创建一个基础场景
+- 不生成对应的步骤定义文件
+- 确保API文档路径正确
+- 标签规范：
+  - Feature级标签：每个Feature必须包含模块标签（如`@account`）和功能标签（如`@channels`）
+  - Scenario级标签：使用特定的测试类型标签（如`@search`、`@create`），不重复Feature已有标签
+  - 确保所有Scenario都有对应的标签，便于测试筛选运行
+
+

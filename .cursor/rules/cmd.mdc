@@ -1,0 +1,59 @@
+---
+description: 命令使用规范：执行命令前必读
+globs: 
+alwaysApply: true
+---
+# 命令规则说明
+
+## 通用规则
+- 执行命令前，请确保已阅读并理解相关的规则文件
+- 特定任务的命令必须严格遵循对应规则文件中的规范
+- 规则文件位于 `.cursor/rules/tasks` 目录下
+- 开始新任务时，请检查 tasks 目录下是否有相关的规范文件
+- 如果发现新的最佳实践或工作流程，请及时更新相关规则文件
+
+## 测试相关命令
+
+### API文档
+- 文档目录: docs
+
+### 基本测试命令
+- `/test` - 执行基本测试命令
+  - 执行: `npm test`
+  - 用途: 运行所有测试用例
+
+### 标签测试命令
+- `/test 标签名 [标签名...]` - 执行标签测试
+  - 单标签格式: `/test user`
+    - 执行: `npm run test:verbose -- --tags '@user'`
+  - 多标签格式: `/test login user`
+    - 执行: `npm run test:verbose -- --tags '@login and @user'`
+
+## 功能文件生成命令
+
+### 新增功能文件
+- `/add_feat -u API_URL [描述]` - 通过API URL查找文档并生成功能文件
+  - 格式: `/add_feat -u https://help.polyv.net/index.html#/live/api/web/info/updatechannelname 修改频道名称`
+  - 别名: /af
+  - 用途: 根据API_URL下载文档放到docs目录，根据文档内容在 src/features 目录下生成新的 feature 文件
+  - 命令参数说明：
+    - `-u`: 指定API URL，必填参数
+    - 描述信息：可选参数，用于补充功能说明
+  - **说明**:
+    - 如果docs目录下没有指定API_URL对应的文档，需要从网络下载文档放到docs目录下
+  - **重要**: 执行此命令前必须阅读并遵循 [010-feature-generation.mdc](mdc:.cursor/rules/tasks/010-feature-generation.mdc) 中的规范
+
+### 添加测试场景
+- `/add_scene feature路径` - 为指定feature添加新的测试场景
+  - 格式: `/add_scene src/features/account/create_category.feature`
+  - 别名: /as
+  - 用途: 为现有feature文件添加新的测试场景
+  - **重要**: 执行此命令前必须阅读并遵循 [030-scene-generation.mdc](mdc:.cursor/rules/tasks/030-scene-generation.mdc) 中的规范
+
+## 规范文件参考
+
+### 核心规范文件
+- [010-feature-generation.mdc](mdc:.cursor/rules/tasks/010-feature-generation.mdc) - Feature文件生成规范
+- [020-scene-generation.mdc](mdc:.cursor/rules/tasks/030-scene-generation.mdc) - 场景添加规范
+- [030-data-lifecycle.mdc](mdc:.cursor/rules/tasks/040-data-lifecycle.mdc) - 数据生命周期管理规范
+- [040-scenario-patterns.mdc](mdc:.cursor/rules/tasks/050-scenario-patterns.mdc) - 场景模式规范

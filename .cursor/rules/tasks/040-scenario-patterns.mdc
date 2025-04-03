@@ -1,0 +1,155 @@
+---
+description: 场景模式规范和指引，包含Scenario Outline等高级场景模式
+globs: 
+alwaysApply: false
+---
+
+# 场景模式规范
+
+本文档提供了BDD场景编写的高级模式和最佳实践，包括参数化测试、场景大纲等。
+
+## Scenario Outline 场景大纲
+
+### 基本概念
+
+Scenario Outline（场景大纲）是一种强大的测试参数化方法，允许使用不同参数集重复执行相同的场景结构。适用于需要测试多组不同输入值的情况，避免了重复编写相似场景。
+
+### 基本结构
+
+```gherkin
+Scenario Outline: <场景名称>
+  Given <前置条件>
+  When <操作步骤>
+  Then <验证结果>
+
+  Examples:
+    | 参数1 | 参数2 | ... |
+    | 值1-1 | 值1-2 | ... |
+    | 值2-1 | 值2-2 | ... |
+```
+
+### 实际示例
+
+```gherkin
+@robot @list @pagination
+Scenario Outline: 机器人列表分页测试
+  When 我设置查询参数表格数据
+    | 字段名      | 值            |
+    | pageNumber  | <页码>        |
+    | pageSize    | <每页条数>    |
+  And 我基于键名 "ROBOT.LIST" 发送请求
+  Then 响应状态码应为 200
+  And 响应字段 "data.pageNumber" 应等于数值 <页码>
+  And 响应字段 "data.pageSize" 应等于数值 <每页条数>
+
+  Examples:
+    | 页码 | 每页条数 |
+    | 1    | 5        |
+    | 2    | 5        |
+```
+
+### 适用场景
+
+Scenario Outline 特别适用于以下测试场景：
+
+1. **分页测试**：测试不同页码和每页条数组合
+2. **边界值测试**：使用参数的上下限、临界值进行测试
+3. **多种类型测试**：测试不同类型参数对同一接口的影响
+4. **排序测试**：验证不同排序字段和顺序组合
+5. **筛选测试**：测试不同筛选条件组合
+
+### 编写规范
+
+1. **命名规则**：场景名称应明确表示参数变化的目的，如"不同页码的分页测试"
+2. **参数名称**：使用中文参数名以增加可读性
+3. **注释说明**：添加注释说明参数变化的目的
+4. **参数引用**：使用 `<参数名>` 格式在步骤中引用参数
+5. **表格设计**：列标题必须与步骤中的参数名完全匹配
+
+### 高级示例：边界值测试
+
+```gherkin
+@user @global_setting @validation
+Scenario Outline: 不同类型字段的边界值测试
+  When 我设置JSON请求体为表格数据
+    | 字段名   | 值        |
+    | <字段名> | <测试值>  |
+  And 我基于键名 "USER.GLOBAL_SETTING_UPDATE" 发送请求
+  Then 响应状态码应为 <预期状态码>
+  And 响应字段 "status" 应等于 "<预期状态>"
+  And 响应字段 "message" 应包含 "<错误消息>"
+
+  Examples:
+    | 字段名      | 测试值  | 预期状态码 | 预期状态 | 错误消息     |
+    | maxDuration | -1      | 400        | error    | 参数不合法   |
+    | maxDuration | 0       | 400        | error    | 参数不能为零 |
+    | maxDuration | 36001   | 400        | error    | 超出最大限制 |
+    | maxDuration | 3600    | 200        | success  |             |
+```
+
+### 最佳实践
+
+1. **控制测试数量**：通常使用2-5组代表性参数值，避免过多组合导致测试运行时间过长
+2. **分组测试**：当参数组合过多时，考虑拆分为多个Scenario Outline
+3. **确保独立性**：每组参数测试应该相互独立，不依赖于执行顺序
+4. **明确测试意图**：确保每组参数都有明确的测试意图，不要随意组合参数
+5. **使用有代表性的参数**：优先选择边界值、临界值和典型值
+
+## Background 共享前置条件
+
+当多个场景需要相同的前置条件时，可以使用 Background 来减少重复：
+
+```gherkin
+Feature: 频道管理功能
+
+  Background:
+    Given 创建一个新频道
+    And 我保存响应中 "data.channelId" 到上下文的 "channelId"
+
+  @channel @query
+  Scenario: 查询频道详情
+    When 我设置查询参数表格数据
+      | 字段名    | 值                  |
+      | channelId | {context.channelId} |
+    # ...后续步骤
+
+  @channel @update
+  Scenario: 更新频道信息
+    When 我设置JSON请求体为表格数据
+      | 字段名    | 值                  |
+      | channelId | {context.channelId} |
+      | name      | 更新后的频道名称    |
+    # ...后续步骤
+```
+
+### Background 使用规范
+
+1. 只放置所有场景共用的步骤
+2. 保持简短，通常不超过3-4个步骤
+3. 每个步骤应具有明确作用
+4. Background 会在每个场景前执行
+5. 不推荐在 Background 中执行复杂或耗时操作
+
+## Rule 场景分组
+
+Rule 用于将相关场景按业务规则分组：
+
+```gherkin
+Feature: 用户管理
+
+  Rule: 普通用户不能访问管理员功能
+    Scenario: 尝试访问管理页面
+      # 测试普通用户访问管理页面
+
+    Scenario: 尝试执行管理操作
+      # 测试普通用户执行管理操作
+
+  Rule: 管理员可以管理所有用户
+    Scenario: 管理员查看用户列表
+      # 测试管理员查看用户列表
+
+    Scenario: 管理员修改用户信息
+      # 测试管理员修改用户信息
+```
+
+Rule 适用于按业务规则或功能需求组织测试场景，提高了场景的组织性和可读性。 

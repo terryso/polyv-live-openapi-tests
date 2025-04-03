@@ -1,0 +1,113 @@
+---
+description: 场景（Scenario）添加规范和指引
+globs: 
+alwaysApply: false
+---
+
+# 场景添加规范
+
+## 基本原则
+
+1. 添加前检查当前场景覆盖情况
+2. 仅添加未覆盖的功能点或边界条件
+3. 只使用 `src/steps/common/enhanced-api.steps.ts` 中的通用步骤
+4. 确保新场景与已有场景不重复
+
+## 不应添加的场景类型
+
+- 签名验证错误场景
+- 通用认证错误场景
+- HTTP协议级别错误
+- 重复的通用场景
+
+## 场景类型与标签
+
+每个场景使用适当的标签：
+
+```gherkin
+@场景类型 [@其他标签...]
+Scenario: 场景名称
+```
+
+> **重要规则**：Scenario中不应重复Feature已有的标签。Feature级标签用于标识模块（如 `@channel`），Scenario级标签用于标识具体测试类型（如 `@create`）。
+
+### 常用标签
+
+| 标签 | 描述 | 适用场景 |
+|---|---|----|
+| `@search` | 基础搜索/查询功能 | 列表查询，基础功能场景 |
+| `@create` | 创建资源 | 测试创建功能 |
+| `@update` | 更新资源 | 测试更新功能 |
+| `@delete` | 删除资源 | 测试删除功能 |
+| `@validation` | 参数验证 | 验证必填参数、参数格式等 |
+| `@error` | 错误处理 | 测试异常情况下的响应 |
+| `@filter` | 筛选功能 | 测试关键词搜索、字段筛选等 |
+| `@pagination` | 分页功能 | 测试分页参数 |
+
+## 常见场景类型
+
+### 查询类场景
+
+```gherkin
+@account @channels @search
+Scenario: 成功查询频道列表
+  When 我设置查询参数表格数据
+    | 字段名  | 值   |
+    | keyword | 测试 |
+  And 我基于键名 "ACCOUNT.CHANNELS" 发送请求
+  Then 响应状态码应为 200
+  And 响应字段 "data.channels" 应为数组
+```
+
+### 参数验证场景
+
+```gherkin
+@channel @create @validation @error
+Scenario: 缺少直播名称参数
+  When 我设置JSON请求体为表格数据
+    | 字段名   | 值       |
+    | newScene | topclass |
+    | template | ppt      |
+  And 我基于键名 "CHANNEL.CREATE" 发送请求
+  And 响应JSON应匹配
+    """
+    {
+      "code": 400,
+      "status": "error",
+      "success": false,
+      "error": {
+        "code": 10001,
+        "desc": "直播名称不能为空"
+      }
+    }
+    """
+```
+
+## JSON响应验证技巧
+
+```gherkin
+# 使用通配符匹配不确定值
+Then 响应JSON应匹配
+  """
+  {
+    "code": 200,
+    "status": "success",
+    "data": {
+      "channelId": "*",  # 匹配任意值
+      "name": "*测试*"    # 部分匹配字符串内容
+    }
+  }
+  """
+
+# 单独验证特定字段
+And 响应字段 "data.channels" 应为数组
+And 响应数组 "data.channels" 的长度应大于 0
+And 响应数组 "data.channels" 的每个元素应包含字段 "channelId"
+```
+
+## 场景命名规范
+
+- 基础功能场景：`成功{操作}{资源}`，如`成功查询频道列表`
+- 参数验证场景：`缺少{参数名称}`或`{参数名称}格式错误`
+- 错误处理场景：`{错误条件}时的错误处理`
+- 筛选场景：`按{筛选条件}筛选` 

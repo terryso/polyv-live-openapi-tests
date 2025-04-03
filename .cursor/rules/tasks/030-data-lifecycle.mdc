@@ -1,0 +1,88 @@
+---
+description: 数据生命周期管理规范和指引
+globs: 
+alwaysApply: false
+---
+
+# 数据生命周期管理规范
+
+## 基本原则
+
+1. 测试数据在测试开始前创建，结束后清理
+2. 场景间测试数据相互独立
+3. 使用通用工厂方法创建测试数据
+4. 自动清理基于特定的上下文命名和标签
+
+## 标签约定
+
+使用标签组合标识资源创建和清理：
+
+```gherkin
+@module @create @query @delete
+Scenario: 创建资源并验证
+```
+
+- `@create` 标签标识需要自动清理的资源（必须）
+- `@module` 标签指定资源所属模块（如 `@channel`）
+
+## 数据准备与清理流程
+
+### 1. 使用通用数据准备步骤
+
+```gherkin
+Given 创建一个新频道
+```
+
+常用数据准备步骤：
+- `创建一个新频道`
+- `创建一个新频道分类`
+- `创建一个新机器人`
+
+### 2. 保存资源ID到上下文
+
+```gherkin
+And 我保存响应中 "data.categoryId" 到上下文的 "categoryId"
+```
+
+必须使用约定的字段名：
+- 频道资源：`channelId`
+- 分类资源：`categoryId` 
+- 机器人资源：`robotId`
+
+### 3. 使用动态参数
+
+```gherkin
+When 我设置查询参数表格数据
+  | 字段名     | 值                   |
+  | channelId  | {context.channelId}  |
+```
+
+### 4. 自动清理机制
+
+带有 `@create` 标签的场景会自动触发钩子函数清理创建的资源。
+
+## 完整示例
+
+```gherkin
+@channel @create @query
+Scenario: 创建频道并查询
+  # 1. 创建测试数据
+  Given 创建一个新频道
+  # 2. 保存ID（关键步骤，勿省略）
+  And 我保存响应中 "data.channelId" 到上下文的 "channelId"
+  # 3. 使用创建的数据
+  When 我设置查询参数表格数据
+    | 字段名     | 值                  |
+    | channelId  | {context.channelId} |
+  And 我基于键名 "CHANNEL.DETAIL" 发送请求
+  # 4. 验证结果
+  Then 响应状态码应为 200
+  # 场景结束后自动清理
+```
+
+## 注意事项
+
+1. 必须使用正确的上下文变量名（如`channelId`、`categoryId`）
+2. 必须添加 `@create` 标签以触发自动清理
+3. 避免硬编码资源ID
+4. 不要添加显式清理步骤（依赖自动清理） 
