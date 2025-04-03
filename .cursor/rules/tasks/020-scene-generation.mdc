@@ -10,7 +10,7 @@ alwaysApply: false
 
 1. 添加前检查当前场景覆盖情况
 2. 仅添加未覆盖的功能点或边界条件
-3. 只使用 `src/steps/common/enhanced-api.steps.ts` 中的通用步骤
+3. 只使用 `src/steps/common/api.steps.ts` 中的通用步骤
 4. 确保新场景与已有场景不重复
 
 ## 不应添加的场景类型

@@ -62,3 +62,4 @@ src/snapshots/**/*.json
 # 测试快照
 test-snapshots/
 
+polyv-api-testing-framework.md

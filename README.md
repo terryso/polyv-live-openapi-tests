@@ -33,6 +33,19 @@ cp .env.example .env
 
 编辑 `.env` 文件，配置必要的环境变量，包括API访问密钥和基础URL。
 
+### 获取保利威API密钥
+
+在使用此测试框架前，您需要获取保利威API的访问密钥。请按照以下步骤操作：
+
+1. 登录保利威管理后台
+2. 访问 [保利威开发者设置](https://help.polyv.net/index.html#/live/api/getSecretKey) 页面
+3. 获取以下必要信息：
+   - POLYV_APP_ID (应用ID)
+   - POLYV_APP_SECRET (应用密钥)
+   - POLYV_USER_ID (用户ID)
+
+这些信息需要配置在 `.env` 文件中才能正常使用测试框架。
+
 ### 运行测试
 
 ```bash
@@ -53,13 +66,14 @@ npm run test:verbose -- --tags "@account and @create"
 ## 项目结构
 
 ```
-live-openapi-tests/
+polyv-live-openapi-tests/
 ├── .cursor/           # Cursor IDE配置
 │   └── rules/         # 开发规范和指引
 │       └── tasks/     # 任务相关规范文件
-│           ├── 010-feature-generation.mdc   # 特性文件生成规范
-│           ├── 020-steps-generation.mdc     # 步骤文件生成规范
-│           └── 030-scene-generation.mdc     # 场景添加规范
+│           ├── 010-feature-generation.mdc  # 特性文件生成规范
+│           ├── 020-scene-generation.mdc    # 场景添加规范 
+│           ├── 030-data-lifecycle.mdc      # 数据生命周期管理规范
+│           └── 040-scenario-patterns.mdc   # 场景模式规范
 ├── docs/              # API文档目录
 │   └── v4/            # V4版本API文档
 │       ├── user/      # 用户相关API文档
@@ -68,19 +82,21 @@ live-openapi-tests/
 ├── scripts/           # 工具脚本
 ├── src/
 │   ├── api/           # API请求封装
-│   │   ├── client.ts  # API客户端
 │   │   └── urls.ts    # API URL配置
 │   ├── features/      # 功能测试文件，按模块组织
 │   │   ├── account/   # 账户相关功能
 │   │   ├── channel/   # 频道相关功能
-│   │   └── user/      # 用户相关功能
+│   │   ├── user/      # 用户相关功能
+│   │   └── robot/     # 机器人相关功能  
 │   ├── steps/         # 步骤定义
 │   │   └── common/    # 通用步骤定义
-│   │       ├── data.steps.ts         # 数据准备步骤
-│   │       └── api.steps.ts # 增强API测试步骤
+│   │       ├── api.steps.ts  # API测试步骤
+│   │       └── data.steps.ts # 数据准备步骤
 │   ├── support/       # 支持文件
-│   ├── snapshots/     # 快照测试文件
-│   └── reports/       # 测试报告输出目录
+│   └── snapshots/     # 快照测试文件
+├── test/              # 单元测试
+├── test-snapshots/    # 测试快照目录
+├── logs/              # 日志文件
 ├── .env.example       # 环境变量示例
 ├── .env               # 环境变量配置（本地开发）
 ├── cucumber.js        # Cucumber配置
@@ -109,6 +125,12 @@ live-openapi-tests/
   ```
 
 ### 功能开发命令
+
+- `/add_feat -u API_URL [描述]` - 通过API URL查找文档并生成功能文件
+  ```bash
+  # 例如：生成用户信息查询接口的特性文件
+  /add_feat -u https://help.polyv.net/live/api/web/info/updatechannelname.md 修改频道名称
+  ```
 
 - `/add_feat -d API文档路径 [描述]` - 使用本地API文档生成功能文件
   ```bash
@@ -147,27 +169,32 @@ live-openapi-tests/
 功能文件使用Gherkin语法，以`.feature`后缀保存在`src/features`目录下，按模块分类组织：
 
 ```gherkin
-# API文档路径: docs/v4/user/update_global_footer.json
-@user @global_setting
-Feature: 修改页脚设置
+# API文档路径: docs/channel/update_channelname.md
+@channel @update_channel_name
+Feature: 修改频道名称
   作为直播管理员
-  我希望能够修改页脚设置
-  以便于根据需求调整直播系统的页脚显示配置
+  我希望能够修改直播频道的名称
+  以便于更新频道信息
 
-  @user @update
-  Scenario: 成功修改页脚设置
-    # 先查询当前的页脚设置
-    When 我基于键名 "USER.GLOBAL_SETTING_FOOTER_GET" 发送 "GET" 请求
+  @update @create
+  Scenario: 成功修改频道名称
+    # 先创建一个测试频道
+    Given 创建一个新频道
+    And 我保存响应中 "data.channelId" 到上下文的 "channelId"
+    # 更新频道名称
+    When 我设置查询参数 "name" 为 "更新后的频道名称"
+    And 我设置路径参数 "channelId" 为 "{context.channelId}"
+    And 我基于键名 "CHANNEL.UPDATE_NAME" 发送请求
     Then 响应状态码应为 200
-    And 我保存响应中 "data.showFooterEnabled" 到上下文的 "originalShowFooterEnabled"
-    
-    # 修改页脚设置
-    When 我设置JSON请求体为表格数据
-      | 字段名               | 值                      |
-      | showFooterEnabled    | Y                       |
-      | footerText           | 保利威提供技术支持       |
-    And 我基于键名 "USER.GLOBAL_SETTING_FOOTER_UPDATE" 发送 "POST" 请求
-    Then 响应状态码应为 200
+    And 响应JSON应匹配
+      """
+      {
+        "code": 200,
+        "status": "success",
+        "message": "",
+        "data": true
+      }
+      """
 ```
 
 ### 2. 使用内置步骤
@@ -193,13 +220,13 @@ Feature: 修改页脚设置
 - 发送请求（推荐的简化版本）：
   ```gherkin
   # 无需指定HTTP方法，自动从API配置获取
-  我基于键名 "USER.GLOBAL_SETTING_FOOTER_UPDATE" 发送请求
+  我基于键名 "CHANNEL.UPDATE_NAME" 发送请求
   ```
 
 - 发送请求（带方法的兼容模式）：
   ```gherkin
   # 需要手动指定或覆盖HTTP方法时使用
-  我基于键名 "USER.GLOBAL_SETTING_FOOTER_UPDATE" 发送 "POST" 请求
+  我基于键名 "CHANNEL.UPDATE_NAME" 发送 "POST" 请求
   ```
 
 #### 响应验证步骤
@@ -211,7 +238,7 @@ Feature: 修改页脚设置
 
 - 字段验证：
   ```gherkin
-  响应字段 "data.showFooterEnabled" 应等于 "Y"
+  响应字段 "data.name" 应等于 "更新后的频道名称"
   ```
 
 - JSON匹配：
@@ -228,7 +255,7 @@ Feature: 修改页脚设置
 
 - 快照测试：
   ```gherkin
-  我保存或验证快照 "user/global_setting_footer_update_response"
+  我保存或验证快照 "channel/update_channel_name_response"
   ```
 
 #### 上下文数据操作
@@ -240,9 +267,7 @@ Feature: 修改页脚设置
 
 - 使用上下文数据：
   ```gherkin
-  我设置JSON请求体为表格数据
-    | 字段名   | 值                    |
-    | channelId  | {context.channelId}  |
+  我设置查询参数 "channelId" 为 "{context.channelId}"
   ```
 
 ### 3. 常见测试场景类型
@@ -251,10 +276,29 @@ Feature: 修改页脚设置
 
 #### 基础查询场景
 ```gherkin
-@user @search
-Scenario: 成功查询页脚设置
-  When 我基于键名 "USER.GLOBAL_SETTING_FOOTER_GET" 发送请求
+@user @label @page
+Scenario: 成功查询标签列表
+  When 我设置查询参数表格数据
+    | 字段名      | 值  |
+    | pageNumber  | 1   |
+    | pageSize    | 10  |
+  And 我基于键名 "USER.LABEL_PAGE" 发送请求
   Then 响应状态码应为 200
+  And 响应JSON应匹配
+    """
+    {
+      "code": 200,
+      "status": "success",
+      "data": {
+        "pageNumber": 1,
+        "pageSize": 10,
+        "totalPages": "*",
+        "totalItems": "*",
+        "contents": "*"
+      },
+      "success": true
+    }
+    """
 ```
 
 #### 创建或更新场景
@@ -299,20 +343,28 @@ Scenario: 参数长度超限
 
 #### 数据生命周期场景
 ```gherkin
-@channel @create @query @delete
-Scenario: 创建频道并查询其详情
+@channel @update @create
+Scenario: 成功修改频道名称
   # 创建数据
   Given 创建一个新频道
   And 我保存响应中 "data.channelId" 到上下文的 "channelId"
 
-  # 查询操作
-  When 我设置查询参数表格数据
-    | 字段名     | 值                   |
-    | channelId  | {context.channelId}  |
-  And 我基于键名 "CHANNEL.DETAIL" 发送 "GET" 请求
+  # 更新频道名称
+  When 我设置查询参数 "name" 为 "更新后的频道名称"
+  And 我设置路径参数 "channelId" 为 "{context.channelId}"
+  And 我基于键名 "CHANNEL.UPDATE_NAME" 发送请求
   
   # 验证结果
   Then 响应状态码应为 200
+  And 响应JSON应匹配
+    """
+    {
+      "code": 200,
+      "status": "success",
+      "message": "",
+      "data": true
+    }
+    """
 ```
 
 ## 高级功能
@@ -344,7 +396,7 @@ Scenario: 创建频道并查询其详情
 我保存或验证快照 "user/global_setting_footer_update_response"
 ```
 
-快照文件存储在 `src/snapshots` 目录下。
+快照文件存储在 `test-snapshots` 目录下。
 
 ### 数据准备和清理
 
@@ -379,8 +431,9 @@ Scenario: 测试频道操作
 
 4. **完整项目规范可参考**
    - `.cursor/rules/tasks/010-feature-generation.mdc` - 特性文件生成规范
-   - `.cursor/rules/tasks/020-steps-generation.mdc` - 步骤文件生成规范
-   - `.cursor/rules/tasks/030-scene-generation.mdc` - 场景添加规范
+   - `.cursor/rules/tasks/020-scene-generation.mdc` - 场景添加规范
+   - `.cursor/rules/tasks/030-data-lifecycle.mdc` - 数据生命周期管理规范
+   - `.cursor/rules/tasks/040-scenario-patterns.mdc` - 场景模式规范
 
 ## 常见问题
 
@@ -389,11 +442,13 @@ Scenario: 测试频道操作
 确保在运行测试前正确配置 `.env` 文件，需要设置：
 
 ```env
-API_BASE_URL=https://api.example.com
 POLYV_API_BASE_URL=https://api.polyv.net
 POLYV_APP_ID=your_app_id
 POLYV_APP_SECRET=your_app_secret
+POLYV_USER_ID=your_polyv_user_id
 ```
+
+您可以通过访问 [保利威开发者设置](https://help.polyv.net/index.html#/live/api/getSecretKey) 获取这些密钥信息。
 
 ### 2. 测试报告生成
 
@@ -453,54 +508,3 @@ MIT
 1. 新编写的测试场景应**优先使用简化版请求步骤**
 2. 仅在需要覆盖默认HTTP方法时，才使用带方法的请求步骤
 3. 现有的测试场景可以逐步迁移到简化版本，但两种方式都能正常工作 
-
-## CI/CD集成与钉钉通知
-
-项目支持GitLab CI/CD集成，并配置了自动发送钉钉通知的功能，帮助团队及时了解测试结果。
-
-### 钉钉机器人通知
-
-测试框架集成了钉钉机器人通知功能，可以在测试完成后自动发送测试结果到指定的钉钉群。
-
-#### 配置钉钉机器人
-
-1. 在钉钉群中添加自定义机器人（群设置 -> 智能群助手 -> 添加机器人 -> 自定义）
-2. 配置机器人安全设置，可以选择关键词或签名方式
-3. 获取机器人的Webhook地址中的access_token
-4. 如果使用签名方式，还需要记录下签名的密钥（secret）
-
-#### 配置环境变量
-
-在`.env`文件中添加钉钉机器人配置：
-
-```bash
-# 钉钉机器人配置
-DINGTALK_ACCESS_TOKEN=your_access_token
-DINGTALK_SECRET=your_secret_key
-SEND_DINGTALK_NOTIFICATION=false
-```
-
-#### 手动触发通知
-
-可以通过命令行手动发送测试结果通知：
-
-```bash
-# 格式：ts-node src/utils/send-notification.ts [测试名称] [总场景数] [通过场景数] [失败场景数] [耗时(毫秒)] [详情URL]
-ts-node src/utils/send-notification.ts "保利威直播API测试" 25 24 1 15000 "https://gitlab.com/example/project/-/pipelines/123"
-```
-
-#### GitLab CI/CD集成
-
-项目提供了`.gitlab-ci.yml.example`文件作为GitLab CI配置示例，包含了自动测试和发送钉钉通知的配置：
-
-1. 在GitLab项目中添加CI/CD变量：
-   - `DINGTALK_ACCESS_TOKEN`：钉钉机器人的access_token
-   - `DINGTALK_SECRET`：钉钉机器人的加签密钥（如果启用了加签安全设置）
-
-2. 复制`.gitlab-ci.yml.example`为`.gitlab-ci.yml`并根据项目需求调整
-
-CI流程将在测试完成后自动发送包含测试结果的通知到钉钉群，包括：
-- 测试通过/失败状态
-- 测试场景统计（总数/通过/失败）
-- 测试耗时
-- 测试详情链接 

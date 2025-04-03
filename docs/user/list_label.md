@@ -21,16 +21,16 @@ GET
 
 ### 请求参数描述
 | 参数名 | 必选 | 类型 | 说明 |
-| --- | --- | --- |---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| appId | true | String | 账号appId【详见[获取密钥](/live/api/getSecretKey)】 |
+| --- | --- | --- |-----------------------------------------------------------------------------------------------|
+| appId | true | String | 账号appId【详见[获取密钥]】 |
 | timestamp | true | Long | 当前13位毫秒级时间戳，3分钟内有效 |
-| sign | true | String | 签名，为32位大写的MD5值,`生成签名的appSecret密钥作为通信数据安全的关键信息，严禁保存在客户端直接使用，所有API都必须通过客户自己服务器中转调用POLYV服务器获取响应数据`【详见[签名生成规则](/live/api/buildSign)】 |
+| sign | true | String | 签名，为32位大写的MD5值 |
 | pageNumber | true | Integer | 当前页码 |
 | pageSize | true | Integer | 分页大小 |
 
 ### 示例
 ```requestUrl
-https://api.polyv.net/live/v4/user/label/page?appId=frlr1zazn3×tamp=1670471250000&sign=149397BFD607C518A841DAF8777D6A7E&pageNumber=1&pageSize=10
+https://api.polyv.net/live/v4/user/label/page?appId=frlr1zazn3&timestamp=1670471250000&sign=149397BFD607C518A841DAF8777D6A7E&pageNumber=1&pageSize=10
 ```
 
 ### 响应参数描述
@@ -39,9 +39,9 @@ https://api.polyv.net/live/v4/user/label/page?appId=frlr1zazn3×tamp=16704712500
 | code | Integer | 响应状态码，200为成功返回，非200为失败 |
 | status | String | 响应结果，由业务决定，成功返回success，失败返回error |
 | success | Boolean | 响应结果，由业务决定，成功返回true，失败返回false |
-| data | Object | 标签分页数据【详见[data字段说明](#data参数描述)】 |
-| error | Object | 状态码非200时的错误信息【详见[Error字段说明](#error参数描述)】 |
-| requestId | String | 请求ID，每次请求生成的唯一的 UUID，仅可用于排查、调试，不应该和业务挂上钩 |
+| data | Object | 标签分页数据【详见[data字段说明]】 |
+| error | Object | 状态码非200时的错误信息【详见[Error字段说明]】 |
+| requestId | String | 请求ID，每次请求生成的唯一的 UUID |
 
 ### Error参数描述
 | 参数名 | 类型 | 说明 |
